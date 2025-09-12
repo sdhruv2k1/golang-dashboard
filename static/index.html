@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Project Summary Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root{
+      --green:#009639;
+      --green-2:#28A745;
+      --amber:#FFC107;
+      --bg:#f7f7f7;
+      --card:#ffffff;
+      --shadow:0 0 5px rgba(0,0,0,0.1);
+      --text:#222;
+      --muted:#666;
+      --border:#e1e1e1;
+    }
+
+    body { font-family: Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
+    h1 { text-align: center; margin-bottom: 16px; }
+
+    /* Generic sticky title bar for any card/section */
+    .card-title{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(#fff,#fff);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+    }
+
+    /* Filters */
+    .filters {
+      display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    select { padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff; }
+
+    /* KPI Row (top 3) – compact */
+    .kpi-row {
+      display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .kpi-card {
+      flex: 1; min-width: 220px; max-width: 280px; background: var(--card);
+      padding: 0; border-radius: 6px; box-shadow: var(--shadow); text-align: center;
+      display: flex; flex-direction: column;
+    }
+    .kpi-body{ padding: 12px; }
+    .kpi-title { font-size: 13px; color: var(--muted); margin-bottom: 6px; position: sticky; top: 0; }
+    .kpi-value { font-size: 30px; font-weight: 800; color: var(--green); }
+
+    /* Pies + stacked KPIs in same row */
+    .charts-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(260px, 1fr)); /* 2 pies + 1 KPI column */
+      gap: 14px;
+      margin-bottom: 18px;
+      align-items: start;
+    }
+    .chart-container {
+      background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
+      display: flex; flex-direction: column; align-items: stretch;
+      min-height: 280px;
+    }
+    .chart-inner{
+      padding: 8px 10px 10px;
+      display: flex; justify-content: center; align-items: center; flex: 1;
+    }
+    /* bigger pies (status/type) */
+    .chart-inner canvas {
+      display: block;
+      width: 300px !important;
+      height: 220px !important;
+    }
+
+    /* vertical KPI stack column – compact cards */
+    .kpi-stack {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 14px;
+    }
+    .chart-kpi {
+      background: var(--card); box-shadow: var(--shadow); border-radius: 6px; text-align: center;
+      display: flex; flex-direction: column; min-height: 120px;
+    }
+    .chart-kpi .kpi-card-header{ /* reuse sticky title style */
+      composes: card-title;
+    }
+    .chart-kpi .kpi-title { margin: 0; font-size: 13px; }
+    .chart-kpi .kpi-body{ padding: 12px; display: flex; flex: 1; align-items: center; justify-content: center; }
+    .chart-kpi .kpi-value { font-size: 28px; font-weight: 800; color: var(--green); }
+
+    /* Project table (sticky header) */
+    .table-section {
+      max-width: 98%; margin: 0 auto 18px auto;
+      background: var(--card); box-shadow: var(--shadow); border-radius: 6px; padding: 0;
+      display: flex; flex-direction: column;
+    }
+    .table-scroll{
+      overflow-x: auto; max-height: 420px; overflow-y: auto; padding-bottom: 6px;
+    }
+    table { width: 100%; border-collapse: collapse; background: var(--card); table-layout: fixed; }
+    th, td {
+      border: 1px solid var(--border); padding: 8px; text-align: left; font-size: 13px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 120px;
+    }
+    th { background-color: var(--green); color: #fff; }
+    .table-scroll thead th { position: sticky; top: 0; z-index: 5; background: var(--green); }
+
+    /* Billable/Non-Billable + Breakdown */
+    .breakdown-section {
+      display: flex; justify-content: space-between; align-items: stretch; gap: 14px; margin: 18px auto; max-width: 96%;
+    }
+    .breakdown-chart {
+      flex: 0 0 28%; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
+      display: flex; flex-direction: column; align-items: stretch; min-height: 240px;
+    }
+    .breakdown-inner{
+      padding: 10px; display: flex; align-items:center; justify-content:center; flex: 1;
+    }
+    /* bigger than before but still compact */
+    .breakdown-inner canvas {
+      width: 190px !important;
+      height: 190px !important;
+    }
+    .breakdown-table-container {
+      flex: 1; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+    .breakdown-table-title{ composes: card-title; }
+    .breakdown-table-scroll{ overflow-x: auto; max-height: 280px; overflow-y: auto; }
+    .breakdown-table-container table { width: 100%; table-layout: fixed; }
+    .breakdown-table-container th { background-color: var(--green-2); color: white; }
+    .breakdown-table-scroll thead th { position: sticky; top: 0; z-index: 5; background: var(--green-2); }
+
+    /* Horizontal bar */
+    .bar-section {
+      max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
+      display: flex; flex-direction: column;
+    }
+    .bar-inner{ padding: 14px; padding-top: 10px; }
+
+    /* Customer breakdown section (sticky header) */
+    .customer-section {
+      max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
+      display: flex; flex-direction: column;
+    }
+    .customer-table-wrap { overflow-x: auto; max-height: 280px; overflow-y: auto; padding: 0 0 6px; }
+    .customer-table-wrap table { width: 100%; table-layout: fixed; }
+    .customer-table-wrap th { background-color: var(--green-2); color: #fff; }
+    .customer-table-wrap thead th { position: sticky; top: 0; z-index: 5; background: var(--green-2); }
+
+    /* Category × Resource pivot (scrollable + sticky) */
+    .pivot-matrix {
+      max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px; display: flex; flex-direction: column;
+    }
+    .pivot-wrap {
+      width: 100%;
+      max-height: 360px;
+      overflow-x: auto;
+      overflow-y: auto;
+      border-top: 1px solid var(--border);
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      background: #fff;
+    }
+    .pivot-table {
+      border-collapse: separate; border-spacing: 0;
+      width: max-content; min-width: 100%; table-layout: auto;
+    }
+    .pivot-table th, .pivot-table td {
+      border: 1px solid var(--border); padding: 8px; font-size: 13px; white-space: nowrap; min-width: 130px; background: #fff;
+    }
+    .pivot-table th { background: var(--green); color: #fff; position: sticky; top: 0; z-index: 3; }
+    .pivot-table .sticky-col {
+      position: sticky; left: 0; z-index: 4; background: #e8f5e9 !important; color: var(--text) !important; min-width: 220px;
+    }
+    .pivot-table thead .sticky-col { background: var(--green) !important; color: #fff !important; z-index: 5; }
+
+    /* Responsive tweaks */
+    @media (max-width: 1100px){
+      .charts-row{ grid-template-columns: 1fr 1fr; }
+      .kpi-stack{ grid-template-rows: auto auto; }
+    }
+    @media (max-width: 720px){
+      .charts-row{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Project Summary Dashboard</h1>
+
+  <!-- Filters -->
+  <div class="filters">
+    <select id="projectFilter"><option value="">All Projects</option></select>
+    <select id="managerFilter"><option value="">All Project Managers</option></select>
+    <select id="workerFilter"><option value="">All Workers</option></select>
+    <select id="statusFilter"><option value="">All Statuses</option></select>
+  </div>
+
+  <!-- KPI Row (compact) -->
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="card-title">Service Amount</div>
+      <div class="kpi-body">
+        <div id="kpiServiceAmount" class="kpi-value">0</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="card-title">Avg. Service Amount / Project</div>
+      <div class="kpi-body">
+        <div id="kpiAvgServiceAmount" class="kpi-value">0</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="card-title">Recognized Revenue</div>
+      <div class="kpi-body">
+        <div id="kpiRecognizedRevenue" class="kpi-value">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two pies + stacked KPIs -->
+  <div class="charts-row">
+    <div class="chart-container">
+      <div class="card-title">Projects by Status</div>
+      <div class="chart-inner">
+        <canvas id="statusPieChart" width="300" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <div class="card-title">Projects by Type</div>
+      <div class="chart-inner">
+        <canvas id="typePieChart" width="300" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="kpi-stack">
+      <div class="chart-kpi">
+        <div class="card-title">Total Hours</div>
+        <div class="kpi-body">
+          <div id="kpiTotalHours" class="kpi-value">0</div>
+        </div>
+      </div>
+      <div class="chart-kpi">
+        <div class="card-title">Total Projects</div>
+        <div class="kpi-body">
+          <div id="kpiProjectCount" class="kpi-value">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project table -->
+  <div class="table-section">
+    <div class="card-title">Project Detail</div>
+    <div class="table-scroll">
+      <table id="projectTable">
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Manager</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Allotted Hours</th>
+            <th>Billable Hours</th>
+            <th>Non-Billable Hours</th>
+            <th>Task Completion %</th>
+            <th>Service Tag</th>
+            <th>Cash Value</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Billable vs Non-Billable + Worker Breakdown -->
+  <div class="breakdown-section">
+    <div class="breakdown-chart">
+      <div class="card-title">Billable vs Non-Billable</div>
+      <div class="breakdown-inner">
+        <canvas id="billablePieChart" width="190" height="190"></canvas>
+      </div>
+    </div>
+
+    <div class="breakdown-table-container">
+      <div class="card-title">Worker Breakdown</div>
+      <div class="breakdown-table-scroll">
+        <table id="billableBreakdownTable">
+          <thead>
+            <tr>
+              <th>Worker Name</th>
+              <th>Total Hours</th>
+              <th>Billable %</th>
+              <th>Non-Billable %</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Horizontal bar -->
+  <div class="bar-section">
+    <div class="card-title">Hours by Time Category</div>
+    <div class="bar-inner">
+      <canvas id="timeCategoryBarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Customer Breakdown -->
+  <div class="customer-section">
+    <div class="card-title">Customer Breakdown</div>
+    <div class="customer-table-wrap">
+      <table id="customerBreakdownTable">
+        <thead>
+          <tr>
+            <th>Customer Name</th>
+            <th>Total Hours</th>
+            <th>Billable %</th>
+            <th>Non-Billable %</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Category × Resource KPI Matrix -->
+  <div class="pivot-matrix">
+    <div class="card-title">Hours Logged by Category &amp; Resource</div>
+    <div class="pivot-wrap">
+      <table class="pivot-table" id="categoryResourcePivot"></table>
+    </div>
+  </div>
+
+  <script>
+    let fullData = [];
+    const charts = {};
+    const fmt = n => (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:2});
+    const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+    async function fetchData() {
+      try {
+        const res = await fetch('/report');
+        fullData = await res.json();
+      } catch { fullData = []; }
+
+      if (!fullData.length) {
+        fullData = [
+          { project_id: 1, project_name: "Apollo", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
+            allotted_hours: 120, billable_hours: 80, non_billable_hours: 10, completed_tasks: 7, total_tasks: 10,
+            service_tag: "Gold", adjusted_cash_value: 50000,
+            worker: "Ashley Kunihiro", billable: "Yes", total_hours: 144, time_category: "Admin: Holiday (Non-Billable)", customer_name: "Acme Corp" },
+          { project_id: 2, project_name: "Zephyr", project_manager_name: "Jordan", project_status: "On Time", new_project_type: "Upgrade",
+            allotted_hours: 90, billable_hours: 40, non_billable_hours: 20, completed_tasks: 4, total_tasks: 12,
+            service_tag: "Silver", adjusted_cash_value: 32000,
+            worker: "Marina O'Mara", billable: "No", total_hours: 62.8, time_category: "Admin: Meetings (Non-Billable)", customer_name: "Globex" },
+          { project_id: 3, project_name: "Nimbus", project_manager_name: "Jordan", project_status: "Done", new_project_type: "Migration",
+            allotted_hours: 60, billable_hours: 20, non_billable_hours: 15, completed_tasks: 10, total_tasks: 10,
+            service_tag: "Bronze", adjusted_cash_value: 15000,
+            worker: "Corie Halls", billable: "Yes", total_hours: 54.2, time_category: "Internal Project (Non-Billable)", customer_name: "Acme Corp" },
+          { project_id: 4, project_name: "Orion", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
+            allotted_hours: 80, billable_hours: 65, non_billable_hours: 12, completed_tasks: 5, total_tasks: 8,
+            service_tag: "Gold", adjusted_cash_value: 42000,
+            worker: "Gaurav Rajawat", billable: "No", total_hours: 49.8, time_category: "Project: Admin/Meetings (Billable)", customer_name: "Umbrella" }
+        ];
+      }
+
+      populateFilters(fullData);
+      rerenderAll(fullData);
+
+      ["projectFilter","managerFilter","workerFilter","statusFilter"].forEach(id =>
+        document.getElementById(id).addEventListener("change", () => rerenderAll(getFilteredData()))
+      );
+    }
+
+    function rerenderAll(data) {
+      updateKPIs(data);
+      renderTopPies(data);
+      populateTable(aggregateProjects(data));
+      renderBillablePie(data);
+      populateWorkerBreakdown(data);
+      renderTimeCategoryBar(data);
+      populateCustomerBreakdown(data);
+      renderCategoryResourcePivot(data);
+    }
+
+    function getFilteredData() {
+      const project = document.getElementById("projectFilter").value;
+      const manager = document.getElementById("managerFilter").value;
+      const worker  = document.getElementById("workerFilter").value;
+      const status  = document.getElementById("statusFilter").value;
+      return fullData.filter(r =>
+        (!project || r.project_name === project) &&
+        (!manager || r.project_manager_name === manager) &&
+        (!worker || r.worker === worker) &&
+        (!status || r.project_status === status)
+      );
+    }
+
+    /* Filters */
+    function populateFilters(data) {
+      const projects = new Set(), managers = new Set(), workers = new Set(), statuses = new Set();
+      data.forEach(r => {
+        if (r.project_name) projects.add(r.project_name);
+        if (r.project_manager_name) managers.add(r.project_manager_name);
+        if (r.worker) workers.add(r.worker);
+        if (r.project_status) statuses.add(r.project_status);
+      });
+      fillSelect("projectFilter", [...projects]);
+      fillSelect("managerFilter", [...managers]);
+      fillSelect("workerFilter",   [...workers]);
+      fillSelect("statusFilter",   [...statuses]);
+    }
+    function fillSelect(id, arr) {
+      const sel = document.getElementById(id);
+      while (sel.options.length > 1) sel.remove(1);
+      arr.sort().forEach(v => {
+        const o = document.createElement("option");
+        o.value = v; o.textContent = v; sel.appendChild(o);
+      });
+    }
+
+    /* KPIs */
+    function updateKPIs(data) {
+      const serviceAmount = data.reduce((sum, r) => sum + (Number(r.adjusted_cash_value) || 0), 0);
+      const projectIds = [...new Set(data.map(r => r.project_id).filter(v => v !== undefined && v !== null))];
+      const avgServiceAmount = projectIds.length ? serviceAmount / projectIds.length : 0;
+      const recognizedRevenue = serviceAmount; // as requested
+      const totalHours = data.reduce((s, r) => s + (Number(r.total_hours) || 0), 0);
+      const projectCount = projectIds.length;
+
+      document.getElementById("kpiServiceAmount").textContent = fmt(serviceAmount);
+      document.getElementById("kpiAvgServiceAmount").textContent = fmt(avgServiceAmount);
+      document.getElementById("kpiRecognizedRevenue").textContent = fmt(recognizedRevenue);
+      document.getElementById("kpiTotalHours").textContent = fmt(totalHours);
+      document.getElementById("kpiProjectCount").textContent = fmt(projectCount);
+    }
+
+    /* Top pies (use sticky titles instead of Chart.js titles) */
+    function renderTopPies(data) {
+      renderPie("statusPieChart", data, "project_status");
+      renderPie("typePieChart",   data, "new_project_type");
+    }
+    function renderPie(canvasId, data, field) {
+      const counts = {};
+      data.forEach(r => { const key = r[field] || "Unknown"; counts[key] = (counts[key] || 0) + 1; });
+      const ctx = document.getElementById(canvasId);
+      if (charts[canvasId]) charts[canvasId].destroy();
+      charts[canvasId] = new Chart(ctx, {
+        type: "pie",
+        data: { labels: Object.keys(counts),
+          datasets: [{ data: Object.values(counts),
+            backgroundColor: ['#1CABE2','#28A745','#FFC107','#DC3545','#6F42C1','#17A2B8'] }] },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: { title: { display: false }, tooltip: { enabled: true } } /* title off */
+        }
+      });
+    }
+
+    /* Project table aggregation */
+    function aggregateProjects(data) {
+      const map = new Map();
+      data.forEach(r => {
+        const key = `${r.project_name}|${r.project_manager_name}|${r.project_status}|${r.new_project_type}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            project_name: r.project_name, manager_name: r.project_manager_name,
+            project_status: r.project_status, type: r.new_project_type,
+            max_allotted_hours: 0, billable_hours: 0, non_billable_hours: 0,
+            completed_tasks: 0, total_tasks: 0, service_tag: r.service_tag, cash_value: r.adjusted_cash_value
+          });
+        }
+        const agg = map.get(key);
+        agg.max_allotted_hours = Math.max(agg.max_allotted_hours, Number(r.allotted_hours) || 0);
+        agg.billable_hours     += Number(r.billable_hours) || 0;
+        agg.non_billable_hours += Number(r.non_billable_hours) || 0;
+        agg.completed_tasks     = Math.max(agg.completed_tasks, Number(r.completed_tasks) || 0);
+        agg.total_tasks         = Math.max(agg.total_tasks, Number(r.total_tasks) || 0);
+      });
+      return Array.from(map.values()).map(row => {
+        row.task_completion = row.total_tasks ? (row.completed_tasks / row.total_tasks * 100) : 0;
+        return row;
+      });
+    }
+    function populateTable(rows) {
+      const tbody = document.querySelector("#projectTable tbody");
+      tbody.innerHTML = "";
+      rows.slice(0, 25).forEach(r => {
+        tbody.innerHTML += `<tr>
+          <td>${r.project_name || "N/A"}</td>
+          <td>${r.manager_name || "N/A"}</td>
+          <td>${r.project_status || "N/A"}</td>
+          <td>${r.type || "N/A"}</td>
+          <td>${(Number(r.max_allotted_hours)||0).toFixed(1)}</td>
+          <td>${(Number(r.billable_hours)||0).toFixed(1)}</td>
+          <td>${(Number(r.non_billable_hours)||0).toFixed(1)}</td>
+          <td>${(Number(r.task_completion)||0).toFixed(1)}%</td>
+          <td>${r.service_tag || "N/A"}</td>
+          <td>${fmt(r.cash_value)}</td>
+        </tr>`;
+      });
+    }
+
+    /* Billable vs Non-Billable (fixed) */
+    function renderBillablePie(data) {
+      let billableSum = 0, nonBillableSum = 0;
+      data.forEach(r => {
+        const hrs = Number(r.total_hours) || 0;
+        if (r.billable === "Yes") billableSum += hrs;
+        else if (r.billable === "No") nonBillableSum += hrs;
+      });
+      if (billableSum === 0 && nonBillableSum === 0) { billableSum = 120; nonBillableSum = 80; }
+
+      const id = "billablePieChart";
+      const ctx = document.getElementById(id);
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["Billable", "Non-Billable"],
+          datasets: [{ data: [billableSum, nonBillableSum], backgroundColor: [cssVar('--green-2'), cssVar('--amber')] }]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          plugins: { title: { display: false }, tooltip: { enabled: true } } /* title off */
+        }
+      });
+    }
+
+    /* Worker breakdown */
+    function populateWorkerBreakdown(data) {
+      const map = new Map();
+      data.forEach(r => {
+        const worker = r.worker || "Unknown";
+        const hrs = Number(r.total_hours) || 0;
+        if (!map.has(worker)) map.set(worker, { total: 0, bill: 0, non: 0 });
+        const agg = map.get(worker);
+        agg.total += hrs;
+        if (r.billable === "Yes") agg.bill += hrs;
+        else if (r.billable === "No") agg.non += hrs;
+      });
+
+      const tbody = document.querySelector("#billableBreakdownTable tbody");
+      tbody.innerHTML = "";
+      const rows = Array.from(map.entries()).sort((a,b) => b[1].total - a[1].total);
+      rows.forEach(([name, v]) => {
+        const billPct = v.total ? (v.bill / v.total * 100).toFixed(1) : 0;
+        const nonPct  = v.total ? (v.non  / v.total * 100).toFixed(1) : 0;
+        tbody.innerHTML += `<tr>
+          <td>${name}</td><td>${(v.total||0).toFixed(1)}</td><td>${billPct}%</td><td>${nonPct}%</td>
+        </tr>`;
+      });
+
+      if (!rows.length) {
+        const demo = [
+          { w: "Alice",   t: 50, b: 35, n: 15 },
+          { w: "Bob",     t: 30, b:  0, n: 30 },
+          { w: "Charlie", t: 70, b: 50, n: 20 }
+        ];
+        demo.forEach(x => {
+          tbody.innerHTML += `<tr><td>${x.w}</td><td>${x.t.toFixed(1)}</td>
+            <td>${(x.b/x.t*100).toFixed(1)}%</td><td>${(x.n/x.t*100).toFixed(1)}%</td></tr>`;
+        });
+      }
+    }
+
+    /* Horizontal bar: time_category vs SUM(total_hours) */
+    function renderTimeCategoryBar(data) {
+      const cat = {};
+      data.forEach(r => {
+        const k = r.time_category || "Unspecified";
+        cat[k] = (cat[k] || 0) + (Number(r.total_hours) || 0);
+      });
+      let labels = Object.keys(cat), values = Object.values(cat);
+      if (!labels.length) { labels = ["Development","Support","QA"]; values = [100,50,80]; }
+
+      const id = "timeCategoryBarChart";
+      const ctx = document.getElementById(id);
+      if (charts[id]) charts[id].destroy();
+      charts[id] = new Chart(ctx, {
+        type: "bar",
+        data: { labels, datasets: [{ label: "Total Hours", data: values, backgroundColor: cssVar('--green-2') }] },
+        options: {
+          indexAxis: "y",
+          plugins: { title: { display: false }, tooltip: { callbacks: { label: c => `${(Number(c.raw)||0).toFixed(1)} hours` } } },
+          scales: { x: { beginAtZero: true } }
+        }
+      });
+    }
+
+    /* Customer breakdown */
+    function populateCustomerBreakdown(data) {
+      const map = new Map();
+      data.forEach(r => {
+        const customer = r.customer_name || "Unknown";
+        const hrs = Number(r.total_hours) || 0;
+        if (!map.has(customer)) map.set(customer, { total: 0, bill: 0, non: 0 });
+        const agg = map.get(customer);
+        agg.total += hrs;
+        if (r.billable === "Yes") agg.bill += hrs;
+        else if (r.billable === "No") agg.non += hrs;
+      });
+
+      const tbody = document.querySelector("#customerBreakdownTable tbody");
+      tbody.innerHTML = "";
+      const rows = Array.from(map.entries()).sort((a,b) => b[1].total - a[1].total);
+      rows.forEach(([name, v]) => {
+        const billPct = v.total ? (v.bill / v.total * 100).toFixed(1) : 0;
+        const nonPct  = v.total ? (v.non  / v.total * 100).toFixed(1) : 0;
+        tbody.innerHTML += `<tr>
+          <td>${name}</td><td>${(v.total||0).toFixed(1)}</td><td>${billPct}%</td><td>${nonPct}%</td>
+        </tr>`;
+      });
+
+      if (!rows.length) {
+        const demo = [
+          { c: "Acme Corp", t: 120, b: 80, n: 40 },
+          { c: "Globex",    t:  90, b: 40, n: 50 },
+          { c: "Initech",   t:  60, b: 20, n: 40 }
+        ];
+        demo.forEach(x => {
+          const billPct = (x.t ? (x.b / x.t * 100).toFixed(1) : 0) + "%";
+          const nonPct  = (x.t ? (x.n / x.t * 100).toFixed(1) : 0) + "%";
+          tbody.innerHTML += `<tr>
+            <td>${x.c}</td><td>${x.t.toFixed(1)}</td><td>${billPct}</td><td>${nonPct}</td>
+          </tr>`;
+        });
+      }
+    }
+
+    /* Category × Resource Pivot */
+    function renderCategoryResourcePivot(data) {
+      const workers = [...new Set(data.map(r => r.worker).filter(Boolean))].sort();
+      const categories = [...new Set(data.map(r => r.time_category || "Unspecified"))].sort();
+
+      const pivot = {};
+      const rowTotals = {};
+      workers.forEach(w => pivot[w] = {});
+
+      data.forEach(r => {
+        const cat = r.time_category || "Unspecified";
+        const w   = r.worker || "Unknown";
+        const hrs = Number(r.total_hours) || 0;
+        if (!pivot[w]) pivot[w] = {};
+        pivot[w][cat] = (pivot[w][cat] || 0) + hrs;
+        rowTotals[cat] = (rowTotals[cat] || 0) + hrs;
+      });
+
+      let html = '<thead><tr>';
+      html += '<th class="sticky-col">Time Category</th>';
+      workers.forEach(w => { html += `<th>${escapeHtml(w)}<br/>Hours</th>`; });
+      html += '<th>HOURS TOTAL</th></tr></thead><tbody>';
+
+      categories.forEach(cat => {
+        html += `<tr><td class="sticky-col">${escapeHtml(cat)}</td>`;
+        workers.forEach(w => {
+          const v = (pivot[w] && pivot[w][cat]) ? pivot[w][cat] : 0;
+          html += `<td>${v ? v.toFixed(2) : ""}</td>`;
+        });
+        html += `<td>${(rowTotals[cat] || 0).toFixed(2)}</td></tr>`;
+      });
+
+      html += '</tbody>';
+      document.getElementById('categoryResourcePivot').innerHTML = html;
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    }
+
+    fetchData();
+  </script>
+</body>
+<script>
+  fetch('/report')
+    .then(r => r.json())
+    .then(({ schema, rows }) => {
+      console.log('schema:', schema);
+      console.log('rows:', rows);
+      // TODO: render your chart/table here using "rows"
+    })
+    .catch(err => console.error('report error:', err));
+</script>
+
+</html>
