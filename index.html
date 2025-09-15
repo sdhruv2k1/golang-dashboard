@@ -20,7 +20,7 @@
     body { font-family: Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
     h1 { text-align: center; margin-bottom: 16px; }
 
-    /* Generic sticky title bar for any card/section */
+    /* Generic sticky title bar */
     .card-title{
       position: sticky;
       top: 0;
@@ -41,7 +41,7 @@
     }
     select { padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff; }
 
-    /* KPI Row (top 3) – compact */
+    /* KPI Row */
     .kpi-row {
       display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
     }
@@ -57,7 +57,7 @@
     /* Pies + stacked KPIs in same row */
     .charts-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(260px, 1fr)); /* 2 pies + 1 KPI column */
+      grid-template-columns: repeat(3, minmax(260px, 1fr));
       gap: 14px;
       margin-bottom: 18px;
       align-items: start;
@@ -71,14 +71,13 @@
       padding: 8px 10px 10px;
       display: flex; justify-content: center; align-items: center; flex: 1;
     }
-    /* bigger pies (status/type) */
     .chart-inner canvas {
       display: block;
       width: 300px !important;
       height: 220px !important;
     }
 
-    /* vertical KPI stack column – compact cards */
+    /* vertical KPI stack column */
     .kpi-stack {
       display: grid;
       grid-template-rows: 1fr 1fr;
@@ -88,14 +87,24 @@
       background: var(--card); box-shadow: var(--shadow); border-radius: 6px; text-align: center;
       display: flex; flex-direction: column; min-height: 120px;
     }
-    .chart-kpi .kpi-card-header{ /* reuse sticky title style */
-      composes: card-title;
+    .chart-kpi .kpi-card-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(#fff,#fff);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
     }
     .chart-kpi .kpi-title { margin: 0; font-size: 13px; }
     .chart-kpi .kpi-body{ padding: 12px; display: flex; flex: 1; align-items: center; justify-content: center; }
     .chart-kpi .kpi-value { font-size: 28px; font-weight: 800; color: var(--green); }
 
-    /* Project table (sticky header) */
+    /* Project table */
     .table-section {
       max-width: 98%; margin: 0 auto 18px auto;
       background: var(--card); box-shadow: var(--shadow); border-radius: 6px; padding: 0;
@@ -123,7 +132,6 @@
     .breakdown-inner{
       padding: 10px; display: flex; align-items:center; justify-content:center; flex: 1;
     }
-    /* bigger than before but still compact */
     .breakdown-inner canvas {
       width: 190px !important;
       height: 190px !important;
@@ -132,7 +140,19 @@
       flex: 1; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
       overflow: hidden; display: flex; flex-direction: column;
     }
-    .breakdown-table-title{ composes: card-title; }
+    .breakdown-table-title {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(#fff,#fff);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+    }
     .breakdown-table-scroll{ overflow-x: auto; max-height: 280px; overflow-y: auto; }
     .breakdown-table-container table { width: 100%; table-layout: fixed; }
     .breakdown-table-container th { background-color: var(--green-2); color: white; }
@@ -145,7 +165,7 @@
     }
     .bar-inner{ padding: 14px; padding-top: 10px; }
 
-    /* Customer breakdown section (sticky header) */
+    /* Customer breakdown */
     .customer-section {
       max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
       display: flex; flex-direction: column;
@@ -155,7 +175,7 @@
     .customer-table-wrap th { background-color: var(--green-2); color: #fff; }
     .customer-table-wrap thead th { position: sticky; top: 0; z-index: 5; background: var(--green-2); }
 
-    /* Category × Resource pivot (scrollable + sticky) */
+    /* Pivot table */
     .pivot-matrix {
       max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px; display: flex; flex-direction: column;
     }
@@ -182,7 +202,6 @@
     }
     .pivot-table thead .sticky-col { background: var(--green) !important; color: #fff !important; z-index: 5; }
 
-    /* Responsive tweaks */
     @media (max-width: 1100px){
       .charts-row{ grid-template-columns: 1fr 1fr; }
       .kpi-stack{ grid-template-rows: auto auto; }
@@ -352,27 +371,9 @@
       try {
         const res = await fetch('/report');
         fullData = await res.json();
-      } catch { fullData = []; }
-
-      if (!fullData.length) {
-        fullData = [
-          { project_id: 1, project_name: "Apollo", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
-            allotted_hours: 120, billable_hours: 80, non_billable_hours: 10, completed_tasks: 7, total_tasks: 10,
-            service_tag: "Gold", adjusted_cash_value: 50000,
-            worker: "Ashley Kunihiro", billable: "Yes", total_hours: 144, time_category: "Admin: Holiday (Non-Billable)", customer_name: "Acme Corp" },
-          { project_id: 2, project_name: "Zephyr", project_manager_name: "Jordan", project_status: "On Time", new_project_type: "Upgrade",
-            allotted_hours: 90, billable_hours: 40, non_billable_hours: 20, completed_tasks: 4, total_tasks: 12,
-            service_tag: "Silver", adjusted_cash_value: 32000,
-            worker: "Marina O'Mara", billable: "No", total_hours: 62.8, time_category: "Admin: Meetings (Non-Billable)", customer_name: "Globex" },
-          { project_id: 3, project_name: "Nimbus", project_manager_name: "Jordan", project_status: "Done", new_project_type: "Migration",
-            allotted_hours: 60, billable_hours: 20, non_billable_hours: 15, completed_tasks: 10, total_tasks: 10,
-            service_tag: "Bronze", adjusted_cash_value: 15000,
-            worker: "Corie Halls", billable: "Yes", total_hours: 54.2, time_category: "Internal Project (Non-Billable)", customer_name: "Acme Corp" },
-          { project_id: 4, project_name: "Orion", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
-            allotted_hours: 80, billable_hours: 65, non_billable_hours: 12, completed_tasks: 5, total_tasks: 8,
-            service_tag: "Gold", adjusted_cash_value: 42000,
-            worker: "Gaurav Rajawat", billable: "No", total_hours: 49.8, time_category: "Project: Admin/Meetings (Billable)", customer_name: "Umbrella" }
-        ];
+      } catch { 
+        // Use sample data if fetch fails
+        fullData = generateSampleData(15); // Generate 15 sample projects
       }
 
       populateFilters(fullData);
@@ -381,6 +382,50 @@
       ["projectFilter","managerFilter","workerFilter","statusFilter"].forEach(id =>
         document.getElementById(id).addEventListener("change", () => rerenderAll(getFilteredData()))
       );
+    }
+
+    function generateSampleData(count) {
+      const projects = [];
+      const statuses = ["Active", "On Time", "Done", "Delayed", "Planning"];
+      const types = ["Implementation", "Upgrade", "Migration", "Support", "Consulting"];
+      const serviceTags = ["Gold", "Silver", "Bronze", "Platinum"];
+      const workers = ["Ashley Kunihiro", "Marina O'Mara", "Corie Halls", "Gaurav Rajawat", "Alex Johnson", "Sarah Williams", "Michael Brown"];
+      const customers = ["Acme Corp", "Globex", "Umbrella", "Initech", "Wayne Enterprises", "Stark Industries"];
+      const timeCategories = ["Admin: Holiday (Non-Billable)", "Admin: Meetings (Non-Billable)", "Internal Project (Non-Billable)", 
+                             "Project: Development (Billable)", "Project: Support (Billable)", "Project: Admin/Meetings (Billable)"];
+      
+      for (let i = 1; i <= count; i++) {
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const serviceTag = serviceTags[Math.floor(Math.random() * serviceTags.length)];
+        const worker = workers[Math.floor(Math.random() * workers.length)];
+        const customer = customers[Math.floor(Math.random() * customers.length)];
+        const timeCategory = timeCategories[Math.floor(Math.random() * timeCategories.length)];
+        
+        const billable = timeCategory.includes("(Billable)") ? "Yes" : "No";
+        
+        projects.push({
+          project_id: i,
+          project_name: `Project ${String.fromCharCode(64 + i)}`, // A, B, C, etc.
+          project_manager_name: i % 2 === 0 ? "Priya" : "Jordan",
+          project_status: status,
+          new_project_type: type,
+          allotted_hours: Math.floor(Math.random() * 100) + 50,
+          billable_hours: billable === "Yes" ? Math.floor(Math.random() * 80) + 20 : 0,
+          non_billable_hours: billable === "No" ? Math.floor(Math.random() * 40) + 10 : 0,
+          completed_tasks: Math.floor(Math.random() * 15) + 1,
+          total_tasks: Math.floor(Math.random() * 20) + 5,
+          service_tag: serviceTag,
+          adjusted_cash_value: Math.floor(Math.random() * 50000) + 10000,
+          worker: worker,
+          billable: billable,
+          total_hours: Math.floor(Math.random() * 100) + 30,
+          time_category: timeCategory,
+          customer_name: customer
+        });
+      }
+      
+      return projects;
     }
 
     function rerenderAll(data) {
@@ -430,14 +475,25 @@
       });
     }
 
-    /* KPIs */
+    /* KPIs - UPDATED to handle more projects */
     function updateKPIs(data) {
       const serviceAmount = data.reduce((sum, r) => sum + (Number(r.adjusted_cash_value) || 0), 0);
-      const projectIds = [...new Set(data.map(r => r.project_id).filter(v => v !== undefined && v !== null))];
-      const avgServiceAmount = projectIds.length ? serviceAmount / projectIds.length : 0;
-      const recognizedRevenue = serviceAmount; // as requested
+      
+      // Count unique projects - improved method
+      const projectIds = new Set();
+      data.forEach(r => {
+        if (r.project_id !== undefined && r.project_id !== null) {
+          projectIds.add(r.project_id);
+        } else if (r.project_name) {
+          // Fallback to project name if ID is not available
+          projectIds.add(r.project_name);
+        }
+      });
+      
+      const projectCount = projectIds.size;
+      const avgServiceAmount = projectCount ? serviceAmount / projectCount : 0;
+      const recognizedRevenue = serviceAmount;
       const totalHours = data.reduce((s, r) => s + (Number(r.total_hours) || 0), 0);
-      const projectCount = projectIds.length;
 
       document.getElementById("kpiServiceAmount").textContent = fmt(serviceAmount);
       document.getElementById("kpiAvgServiceAmount").textContent = fmt(avgServiceAmount);
@@ -469,26 +525,47 @@
       });
     }
 
-    /* Project table aggregation */
+    /* Project table aggregation - FIXED VERSION */
     function aggregateProjects(data) {
       const map = new Map();
+      
+      // First, group by project_id (or project_name if id is not available)
       data.forEach(r => {
-        const key = `${r.project_name}|${r.project_manager_name}|${r.project_status}|${r.new_project_type}`;
-        if (!map.has(key)) {
-          map.set(key, {
-            project_name: r.project_name, manager_name: r.project_manager_name,
-            project_status: r.project_status, type: r.new_project_type,
-            max_allotted_hours: 0, billable_hours: 0, non_billable_hours: 0,
-            completed_tasks: 0, total_tasks: 0, service_tag: r.service_tag, cash_value: r.adjusted_cash_value
+        const projectKey = r.project_id || r.project_name;
+        
+        if (!map.has(projectKey)) {
+          map.set(projectKey, {
+            project_name: r.project_name,
+            manager_name: r.project_manager_name,
+            project_status: r.project_status,
+            type: r.new_project_type,
+            allotted_hours: Number(r.allotted_hours) || 0,
+            billable_hours: 0,
+            non_billable_hours: 0,
+            completed_tasks: Number(r.completed_tasks) || 0,
+            total_tasks: Number(r.total_tasks) || 0,
+            service_tag: r.service_tag,
+            cash_value: Number(r.adjusted_cash_value) || 0
           });
         }
-        const agg = map.get(key);
-        agg.max_allotted_hours = Math.max(agg.max_allotted_hours, Number(r.allotted_hours) || 0);
-        agg.billable_hours     += Number(r.billable_hours) || 0;
+        
+        const agg = map.get(projectKey);
+        
+        // Sum up hours (not max for billable/non-billable)
+        agg.billable_hours += Number(r.billable_hours) || 0;
         agg.non_billable_hours += Number(r.non_billable_hours) || 0;
-        agg.completed_tasks     = Math.max(agg.completed_tasks, Number(r.completed_tasks) || 0);
-        agg.total_tasks         = Math.max(agg.total_tasks, Number(r.total_tasks) || 0);
+        
+        // For tasks, take the maximum values (assuming they're the same for all records of the same project)
+        agg.completed_tasks = Math.max(agg.completed_tasks, Number(r.completed_tasks) || 0);
+        agg.total_tasks = Math.max(agg.total_tasks, Number(r.total_tasks) || 0);
+        
+        // For allotted hours, take the maximum value
+        agg.allotted_hours = Math.max(agg.allotted_hours, Number(r.allotted_hours) || 0);
+        
+        // For cash value, take the maximum value
+        agg.cash_value = Math.max(agg.cash_value, Number(r.adjusted_cash_value) || 0);
       });
+      
       return Array.from(map.values()).map(row => {
         row.task_completion = row.total_tasks ? (row.completed_tasks / row.total_tasks * 100) : 0;
         return row;
@@ -503,7 +580,7 @@
           <td>${r.manager_name || "N/A"}</td>
           <td>${r.project_status || "N/A"}</td>
           <td>${r.type || "N/A"}</td>
-          <td>${(Number(r.max_allotted_hours)||0).toFixed(1)}</td>
+          <td>${(Number(r.allotted_hours)||0).toFixed(1)}</td>
           <td>${(Number(r.billable_hours)||0).toFixed(1)}</td>
           <td>${(Number(r.non_billable_hours)||0).toFixed(1)}</td>
           <td>${(Number(r.task_completion)||0).toFixed(1)}%</td>
@@ -684,15 +761,4 @@
     fetchData();
   </script>
 </body>
-<script>
-  fetch('/report')
-    .then(r => r.json())
-    .then(({ schema, rows }) => {
-      console.log('schema:', schema);
-      console.log('rows:', rows);
-      // TODO: render your chart/table here using "rows"
-    })
-    .catch(err => console.error('report error:', err));
-</script>
-
 </html>

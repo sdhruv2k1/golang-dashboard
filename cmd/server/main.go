@@ -25,9 +25,9 @@ func main() {
 	if projectID == "" {
 		log.Fatal("Missing env: GOOGLE_CLOUD_PROJECT (or PROJECT_ID)")
 	}
-	location := os.Getenv("BQ_LOCATION") // US, EU, asia-south1, etc.
+	location := os.Getenv("BQ_LOCATION") // e.g. asia-south2
 
-	// BigQuery client (creds from env; see step 4)
+	// BigQuery client
 	ctx := context.Background()
 	client, err := bq.MustFromEnv(ctx, projectID, location)
 	if err != nil {
@@ -42,23 +42,27 @@ func main() {
 	r.Static("/static", "./static")
 	r.StaticFile("/", "./index.html")
 
-	// Simple healthcheck
+	// Healthcheck
 	r.GET("/healthz", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
 
-	// Data API used by the page (or for your charts)
+	// ---- Data API: fetch ALL rows ----
 	r.GET("/report", func(c *gin.Context) {
-		reqCtx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
+		reqCtx, cancel := context.WithTimeout(c.Request.Context(), 300*time.Second)
 		defer cancel()
 
-		rows, schema, err := client.FetchRawRows(reqCtx)
+		rows, schema, err := client.FetchAllRows(reqCtx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		total := len(rows)
+		sql := os.Getenv("DASH_QUERY")
+
 		c.JSON(http.StatusOK, gin.H{
 			"schema": schema,
 			"rows":   rows,
-			"count":  len(rows),
+			"count":  total,
+			"sql":    sql,
 		})
 	})
 

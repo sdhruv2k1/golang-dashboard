@@ -20,7 +20,7 @@
     body { font-family: Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
     h1 { text-align: center; margin-bottom: 16px; }
 
-    /* Generic sticky title bar for any card/section */
+    /* Generic sticky title bar */
     .card-title{
       position: sticky;
       top: 0;
@@ -41,7 +41,7 @@
     }
     select { padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; background: #fff; }
 
-    /* KPI Row (top 3) – compact */
+    /* KPI Row */
     .kpi-row {
       display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; flex-wrap: wrap;
     }
@@ -57,7 +57,7 @@
     /* Pies + stacked KPIs in same row */
     .charts-row {
       display: grid;
-      grid-template-columns: repeat(3, minmax(260px, 1fr)); /* 2 pies + 1 KPI column */
+      grid-template-columns: repeat(3, minmax(260px, 1fr));
       gap: 14px;
       margin-bottom: 18px;
       align-items: start;
@@ -71,14 +71,13 @@
       padding: 8px 10px 10px;
       display: flex; justify-content: center; align-items: center; flex: 1;
     }
-    /* bigger pies (status/type) */
     .chart-inner canvas {
       display: block;
       width: 300px !important;
       height: 220px !important;
     }
 
-    /* vertical KPI stack column – compact cards */
+    /* vertical KPI stack column */
     .kpi-stack {
       display: grid;
       grid-template-rows: 1fr 1fr;
@@ -88,14 +87,24 @@
       background: var(--card); box-shadow: var(--shadow); border-radius: 6px; text-align: center;
       display: flex; flex-direction: column; min-height: 120px;
     }
-    .chart-kpi .kpi-card-header{ /* reuse sticky title style */
-      composes: card-title;
+    .chart-kpi .kpi-card-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(#fff,#fff);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
     }
     .chart-kpi .kpi-title { margin: 0; font-size: 13px; }
     .chart-kpi .kpi-body{ padding: 12px; display: flex; flex: 1; align-items: center; justify-content: center; }
     .chart-kpi .kpi-value { font-size: 28px; font-weight: 800; color: var(--green); }
 
-    /* Project table (sticky header) */
+    /* Project table */
     .table-section {
       max-width: 98%; margin: 0 auto 18px auto;
       background: var(--card); box-shadow: var(--shadow); border-radius: 6px; padding: 0;
@@ -123,7 +132,6 @@
     .breakdown-inner{
       padding: 10px; display: flex; align-items:center; justify-content:center; flex: 1;
     }
-    /* bigger than before but still compact */
     .breakdown-inner canvas {
       width: 190px !important;
       height: 190px !important;
@@ -132,7 +140,19 @@
       flex: 1; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
       overflow: hidden; display: flex; flex-direction: column;
     }
-    .breakdown-table-title{ composes: card-title; }
+    .breakdown-table-title {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: linear-gradient(#fff,#fff);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+    }
     .breakdown-table-scroll{ overflow-x: auto; max-height: 280px; overflow-y: auto; }
     .breakdown-table-container table { width: 100%; table-layout: fixed; }
     .breakdown-table-container th { background-color: var(--green-2); color: white; }
@@ -145,7 +165,7 @@
     }
     .bar-inner{ padding: 14px; padding-top: 10px; }
 
-    /* Customer breakdown section (sticky header) */
+    /* Customer breakdown */
     .customer-section {
       max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px;
       display: flex; flex-direction: column;
@@ -155,7 +175,7 @@
     .customer-table-wrap th { background-color: var(--green-2); color: #fff; }
     .customer-table-wrap thead th { position: sticky; top: 0; z-index: 5; background: var(--green-2); }
 
-    /* Category × Resource pivot (scrollable + sticky) */
+    /* Pivot table */
     .pivot-matrix {
       max-width: 96%; margin: 18px auto; background: var(--card); box-shadow: var(--shadow); border-radius: 6px; display: flex; flex-direction: column;
     }
@@ -182,7 +202,6 @@
     }
     .pivot-table thead .sticky-col { background: var(--green) !important; color: #fff !important; z-index: 5; }
 
-    /* Responsive tweaks */
     @media (max-width: 1100px){
       .charts-row{ grid-template-columns: 1fr 1fr; }
       .kpi-stack{ grid-template-rows: auto auto; }
@@ -193,6 +212,8 @@
   </style>
 </head>
 <body>
+ 
+
   <h1>📊 Project Summary Dashboard</h1>
 
   <!-- Filters -->
@@ -684,15 +705,4 @@
     fetchData();
   </script>
 </body>
-<script>
-  fetch('/report')
-    .then(r => r.json())
-    .then(({ schema, rows }) => {
-      console.log('schema:', schema);
-      console.log('rows:', rows);
-      // TODO: render your chart/table here using "rows"
-    })
-    .catch(err => console.error('report error:', err));
-</script>
-
 </html>
