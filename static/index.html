@@ -376,24 +376,7 @@
       } catch { fullData = []; }
 
       if (!fullData.length) {
-        fullData = [
-          { project_id: 1, project_name: "Apollo", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
-            allotted_hours: 120, billable_hours: 80, non_billable_hours: 10, completed_tasks: 7, total_tasks: 10,
-            service_tag: "Gold", adjusted_cash_value: 50000,
-            worker: "Ashley Kunihiro", billable: "Yes", total_hours: 144, time_category: "Admin: Holiday (Non-Billable)", customer_name: "Acme Corp" },
-          { project_id: 2, project_name: "Zephyr", project_manager_name: "Jordan", project_status: "On Time", new_project_type: "Upgrade",
-            allotted_hours: 90, billable_hours: 40, non_billable_hours: 20, completed_tasks: 4, total_tasks: 12,
-            service_tag: "Silver", adjusted_cash_value: 32000,
-            worker: "Marina O'Mara", billable: "No", total_hours: 62.8, time_category: "Admin: Meetings (Non-Billable)", customer_name: "Globex" },
-          { project_id: 3, project_name: "Nimbus", project_manager_name: "Jordan", project_status: "Done", new_project_type: "Migration",
-            allotted_hours: 60, billable_hours: 20, non_billable_hours: 15, completed_tasks: 10, total_tasks: 10,
-            service_tag: "Bronze", adjusted_cash_value: 15000,
-            worker: "Corie Halls", billable: "Yes", total_hours: 54.2, time_category: "Internal Project (Non-Billable)", customer_name: "Acme Corp" },
-          { project_id: 4, project_name: "Orion", project_manager_name: "Priya", project_status: "Active", new_project_type: "Implementation",
-            allotted_hours: 80, billable_hours: 65, non_billable_hours: 12, completed_tasks: 5, total_tasks: 8,
-            service_tag: "Gold", adjusted_cash_value: 42000,
-            worker: "Gaurav Rajawat", billable: "No", total_hours: 49.8, time_category: "Project: Admin/Meetings (Billable)", customer_name: "Umbrella" }
-        ];
+        fullData = [];
       }
 
       populateFilters(fullData);
